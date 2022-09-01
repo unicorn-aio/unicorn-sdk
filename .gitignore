@@ -1,0 +1,4 @@
+/.idea/
+/dist/
+**/unicorn_sdk.egg-info/
+**/__pycache__/
