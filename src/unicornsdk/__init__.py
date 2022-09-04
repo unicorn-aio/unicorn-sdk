@@ -1,6 +1,9 @@
 from enum import Enum
 
-VERSION = "0.0.1"
+VERSION = "0.0.4"
+
+import urllib3
+urllib3.disable_warnings()
 
 class PlatForm(str, Enum):
     WINDOWS = "WINDOWS"

@@ -2,3 +2,4 @@
 /dist/
 **/unicorn_sdk.egg-info/
 **/__pycache__/
+/tests/*
