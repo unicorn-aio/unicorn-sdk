@@ -5,8 +5,8 @@ import gzip
 from loguru import logger
 
 if TYPE_CHECKING:
-    from .devicesession import DeviceSession
-    from .sdk import UnicornSdk
+    from unicornsdk.api.devicesession import DeviceSession
+    from unicornsdk.sdk import UnicornSdk
 
 
 class KasadaAPI:

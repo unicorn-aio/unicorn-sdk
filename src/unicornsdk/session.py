@@ -7,22 +7,23 @@ from loguru import logger
 import fnmatch
 from requests import Session as RequestSession
 from unicornsdk import PlatForm
-from unicornsdk.devicesession import DeviceSession
+from unicornsdk.api.devicesession import DeviceSession
 from unicornsdk.sdk import UnicornSdk
 from unicornsdk.utils import infer_platform, accept_language_to_languages, now_time_ms
 
 if TYPE_CHECKING:
-    from .kasada import KasadaAPI
+    from unicornsdk.api.kasada import KasadaAPI
 
 
 class Session(RequestSession):
 
-    def __init__(self):
+    def __init__(self, session=None):
         super(Session, self).__init__()
         self._device_session: DeviceSession = None
         self._intercept_mapping = {}
         self.sdk = UnicornSdk()
         self._interceptors = {}
+        self.session = session
 
     def init_device_session(self, session_id=None, platform=PlatForm.WINDOWS, **kwargs):
         self._device_session = DeviceSession(self.sdk)
@@ -40,7 +41,11 @@ class Session(RequestSession):
         headers = request.headers
         self.infer_device_from_header(headers)
         self.pre_hook(request, **kwargs)
-        r = super().send(request, **kwargs)
+        if self.session:
+            # use others session
+            r = self.session.send(request, **kwargs)
+        else:
+            r = super().send(request, **kwargs)
         self.post_hook(r, **kwargs)
         return r
 

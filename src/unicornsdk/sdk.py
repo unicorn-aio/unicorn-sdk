@@ -2,14 +2,16 @@ import requests
 
 
 class UnicornSdk:
-    ACCESS_TOKEN: str
+    CONFIG = {
+        "access_token": None,
+        "sdk_proxy": "http://127.0.0.1:8888",
+        "api_url": "https://us.unicorn-bot.com",
+        "is_debug": False,
+    }
+    API_CLIENT = requests.Session()
 
-    def __init__(self, access_token=None, api_url="https://us.unicorn-bot.com", debug=False):
-        self.api_url = api_url
-        self._api_client = requests.Session()
-        if access_token:
-            UnicornSdk.ACCESS_TOKEN = access_token
-        self._debug = debug
+    def __init__(self):
+        self._debug = False
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, '_instance'):
@@ -17,24 +19,32 @@ class UnicornSdk:
         return cls._instance
 
     def _get_api_client(self):
-        return self._api_client
+        return UnicornSdk.API_CLIENT
+
+    @property
+    def api_url(self):
+        return UnicornSdk.CONFIG["api_url"]
+
+    @property
+    def is_debug(self):
+        return UnicornSdk.CONFIG["is_debug"]
 
     def _get_authorization(self):
         return {
-            "Authorization": "Bearer " + self.ACCESS_TOKEN
+            "Authorization": "Bearer " + str(UnicornSdk.CONFIG["access_token"])
         }
 
     def _get_proxys_for_sdk(self):
-        cur_proxyuri = "http://127.0.0.1:8888"
+        cur_proxyuri = UnicornSdk.CONFIG["sdk_proxy"]
         proxies = {
             "http": cur_proxyuri,
             "https": cur_proxyuri,
         }
-        return proxies if self._debug else None
+        return proxies if self.is_debug else None
 
     @classmethod
     def auth(cls, access_token):
-        cls.ACCESS_TOKEN = access_token
+        UnicornSdk.CONFIG["access_token"] = access_token
 
     def create_device_session(self, session_id, platform):
         """
@@ -42,3 +52,11 @@ class UnicornSdk:
         :return:
         """
         pass
+
+    def config_sdk(self, access_token=None, debug=None, api_url=None):
+        if access_token:
+            UnicornSdk.CONFIG["access_token"] = access_token
+        if debug is not None:
+            UnicornSdk.CONFIG["is_debug"] = bool(debug)
+        if api_url:
+            UnicornSdk.CONFIG["api_url"] = api_url

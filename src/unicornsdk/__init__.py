@@ -15,8 +15,9 @@ class PlatForm(str, Enum):
 
 from .sdk import UnicornSdk
 from .session import Session
+from .tls_session import TlsSession
 
-from .devicesession import DeviceSession
+from unicornsdk.api.devicesession import DeviceSession
 
 
 
