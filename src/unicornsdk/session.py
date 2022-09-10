@@ -20,13 +20,13 @@ class Session(RequestSession):
     def __init__(self, session=None):
         super(Session, self).__init__()
         self._device_session: DeviceSession = None
+        self._need_device_session = False
         self._intercept_mapping = {}
         self.sdk = UnicornSdk()
         self._interceptors = {}
         self.session = session
 
     def init_device_session(self, session_id=None, platform=PlatForm.WINDOWS, **kwargs):
-        self._device_session = DeviceSession(self.sdk)
         self._device_session.init_session(
             session_id=session_id or str(uuid.uuid4()),
             platform=platform,
@@ -34,8 +34,15 @@ class Session(RequestSession):
         )
 
     def config_for_kasada(self, intercept_mapping, use_cd=1):
+        self._need_device_session = True
         solver = KasadaSolver(self, intercept_mapping, use_cd=use_cd)
         self._interceptors["kasada"] = solver
+
+
+    def do_send(self, request, **kwargs):
+        r = super().send(request, **kwargs)
+        return r
+
 
     def send(self, request, **kwargs):
         headers = request.headers
@@ -45,7 +52,7 @@ class Session(RequestSession):
             # use others session
             r = self.session.send(request, **kwargs)
         else:
-            r = super().send(request, **kwargs)
+            r = self.do_send(request, **kwargs)
         self.post_hook(r, **kwargs)
         return r
 
@@ -62,6 +69,11 @@ class Session(RequestSession):
             return
 
         session_id = str(uuid.uuid4())
+        self._device_session = DeviceSession(self.sdk)
+        self._device_session.session_id = session_id
+        if not self._need_device_session:
+            return
+
         ua = headers["user-agent"]
         platform = infer_platform(ua)
         accept_language = headers.get('accept-language')

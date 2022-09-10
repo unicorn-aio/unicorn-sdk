@@ -4,27 +4,14 @@ from collections import OrderedDict
 from typing import Text, MutableMapping, IO, Any, Callable, Container, Mapping
 
 import httpx
+import urllib3
 from requests import auth as _auth, Response, Request
-from requests.adapters import BaseAdapter
+from requests.adapters import BaseAdapter, HTTPAdapter
 from requests.exceptions import InvalidSchema
+from requests.utils import resolve_proxies
 
 from unicornsdk.session import Session
 from unicornsdk.api.tls import TlsAPI
-
-
-class MyTlsAdapter(BaseAdapter):
-
-    def __init__(self, tls_api:TlsAPI):
-        super().__init__()
-        self.tls_api = tls_api
-
-    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None, header_order=None) -> Response:
-        resp = Response()
-        self.tls_api.request_with_req(request, timeout=timeout, proxy_uri=proxies, header_order=header_order)
-        resp.status_code = 200
-        return resp
-
-
 
 
 
@@ -36,8 +23,9 @@ class TlsSession(Session):
         self.ja3: str = None
         self.http2: bool = True
 
-        self.adapters = OrderedDict()
+        # self.adapters = OrderedDict()
         self.tls_adapter = None
+        self.tls_api:TlsAPI  = None
 
     def config_tls(self, parrot=None, ja3=None, http2=None):
         if parrot:
@@ -99,14 +87,47 @@ class TlsSession(Session):
 
         return resp
 
-    def get_adapter(self, url: str) -> BaseAdapter:
-        if not self.tls_adapter:
-            self.tls_adapter = MyTlsAdapter(self._device_session.tls_api(
+    def do_send(self, request, timeout, header_order, **kwargs):
+        if not self.tls_api:
+            self.tls_api = self._device_session.tls_api(
                 parrot=self.parrot, ja3=self.ja3, http2=self.http2,
-            ))
-        if url.lower().startswith("https://"):
-            return self.tls_adapter
-        elif url.lower().startswith("http://"):
-            return self.tls_adapter
-        # Nothing matches :-/
-        raise InvalidSchema(f"No connection adapters were found for {url!r}")
+            )
+
+        kwargs.setdefault("stream", self.stream)
+        kwargs.setdefault("verify", self.verify)
+        kwargs.setdefault("cert", self.cert)
+        if "proxies" not in kwargs:
+            kwargs["proxies"] = resolve_proxies(request, self.proxies, self.trust_env)
+
+        # It's possible that users might accidentally send a Request object.
+        # Guard against that specific failure case.
+        if isinstance(request, Request):
+            raise ValueError("You can only send PreparedRequests.")
+
+        # Set up variables needed for resolve_redirects and dispatching of hooks
+        allow_redirects = kwargs.pop("allow_redirects", True)
+        stream = kwargs.get("stream")
+        hooks = request.hooks
+        proxies = kwargs.get("proxies")
+
+        if request.url.startswith("https://"):
+            proxy_uri = proxies.get("https")
+        else:
+            proxy_uri = proxies.get("http")
+
+        resp = self.tls_api.request_with_req(request, timeout=timeout, proxy_uri=proxy_uri, header_order=header_order)
+        # only handle cookies, not handle redirect
+        self.extract_cookies_to_jar(request, resp)
+        return resp
+
+    def extract_cookies_to_jar(self, req, resp):
+        from httpx import Cookies
+        urllib_response = Cookies._CookieCompatResponse(resp)
+        urllib_request = Cookies._CookieCompatRequest(resp.request)
+        self.cookies.extract_cookies(urllib_response, urllib_request)
+
+        # req = MockRequest(request)
+        # # pull out the HTTPMessage with the headers and put it in the mock:
+        # res = MockResponse(response._original_response.msg)
+        # jar.extract_cookies(res, req)
+        aaa = 1

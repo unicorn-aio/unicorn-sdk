@@ -27,6 +27,7 @@ class TlsAPI:
         self.parrot = parrot
         self.ja3 = ja3
         self.http2 = http2
+        self.forward_url = self.sdk.api_url + "/api/tls/forward/"
 
     def construct_forward_request(
             self, request: httpx.Request,
@@ -45,7 +46,7 @@ class TlsAPI:
             "options": {
                 "url": str(request.url),
                 "method": request.method,
-                "headers": request.headers,
+                "headers": dict(request.headers),
                 "body": base64.b64encode(request.content).decode(),
                 "headerOrder": header_order,
                 "userAgent": userAgent
@@ -71,7 +72,7 @@ class TlsAPI:
             method, url, content=content, data=data, files=files,
             json=json, params=params, headers=headers, cookies=cookies)
         # 构造请求
-        forward_req = self.construct_forward_request(request, timeout, header_order=header_order)
+        forward_req = self.construct_forward_request(request, timeout, header_order=header_order, proxy_uri=proxy_uri)
         forward_req = _json.dumps(forward_req)
         return self.real_do_forward_request(request, forward_req, timeout)
 
@@ -84,8 +85,14 @@ class TlsAPI:
 
     def real_do_forward_request(self, request, data, timeout):
         client = self.sdk._get_api_client()
-        url = self.sdk.api_url + "/api/tls/"
-        ret = client.post(url, data=data, timeout=timeout)
+        ret = client.post(
+            self.forward_url,
+            headers=self.sdk._get_authorization(),
+            data=data,
+            timeout=timeout,
+            verify=False,
+            proxies=self.sdk._get_proxys_for_sdk()
+        )
         return self.construct_response(ret, request)
 
     def construct_request(self, method, url,
@@ -102,19 +109,15 @@ class TlsAPI:
                                               cookies=cookies)
         return request
 
-    def extract_cookies(self, response: Response) -> None:
-        """
-        Loads any cookies based on the response `Set-Cookie` headers.
-        """
-        urllib_response = Cookies._CookieCompatResponse(response)
-        urllib_request = Cookies._CookieCompatRequest(response.request)
-        self.cookiejar.extract_cookies(urllib_response, urllib_request)
-
     def construct_response(self, resp: httpx.Response, req: httpx.Request = None):
         if resp.status_code >= 400:
             # 没有请求成功
             errmsg = resp.json()["errmsg"]
-            raise Exception(errmsg)
+
+            if "Client.Timeout" in errmsg:
+                raise requests.exceptions.Timeout()
+            else:
+                raise Exception(errmsg)
 
         response = resp.json()["Response"]
         body = base64.b64decode(response["Body"])
@@ -132,6 +135,4 @@ class TlsAPI:
             content=body,
             request=req,
         )
-        # 提取 cookie
-        self.extract_cookies(fake_resp)
         return fake_resp

@@ -53,7 +53,8 @@ class UnicornSdk:
         """
         pass
 
-    def config_sdk(self, access_token=None, debug=None, api_url=None):
+    @classmethod
+    def config_sdk(cls, access_token=None, debug=None, api_url=None):
         if access_token:
             UnicornSdk.CONFIG["access_token"] = access_token
         if debug is not None:
