@@ -11,7 +11,6 @@ contact us at: https://t.co/HWHs1FurZa
 
 ## Installation
 
-
 ```console
 $ pip install -U unicorn-sdk
 ```

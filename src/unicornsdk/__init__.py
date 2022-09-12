@@ -1,6 +1,6 @@
 from enum import Enum
 
-VERSION = "0.0.5"
+VERSION = "0.0.7"
 
 import urllib3
 urllib3.disable_warnings()

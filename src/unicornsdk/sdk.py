@@ -1,5 +1,6 @@
 import requests
 
+from unicornsdk.api.captcha import CaptchaAPI
 
 class UnicornSdk:
     CONFIG = {
@@ -61,3 +62,7 @@ class UnicornSdk:
             UnicornSdk.CONFIG["is_debug"] = bool(debug)
         if api_url:
             UnicornSdk.CONFIG["api_url"] = api_url
+
+    @classmethod
+    def captcha_api(cls) -> CaptchaAPI:
+        return CaptchaAPI(UnicornSdk())
