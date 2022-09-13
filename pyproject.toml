@@ -1,3 +1,23 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "unicorn-sdk"
+version = "0.0.8"
+description = "Python Sdk for UnicornAIO API"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+  "brotli",
+  "loguru",
+  "httpx"
+]
+
+
+[project.urls]
+homepage = "https://www.unicorn-bot.com/"
+#documentation = "https://readthedocs.org"
+repository = "https://github.com/unicorn-aio/unicorn-sdk"
+
