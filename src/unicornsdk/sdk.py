@@ -1,6 +1,9 @@
+import atexit
+
 import requests
 
 from unicornsdk.api.captcha import CaptchaAPI
+from unicornsdk.api.devicesession import DeviceSession
 
 class UnicornSdk:
     CONFIG = {
@@ -20,7 +23,7 @@ class UnicornSdk:
         return cls._instance
 
     def _get_api_client(self):
-        return UnicornSdk.API_CLIENT
+        return self.API_CLIENT
 
     @property
     def api_url(self):
@@ -35,7 +38,7 @@ class UnicornSdk:
             "Authorization": "Bearer " + str(UnicornSdk.CONFIG["access_token"])
         }
 
-    def _get_proxys_for_sdk(self):
+    def _get_proxys_for_sdk(self) -> object:
         cur_proxyuri = UnicornSdk.CONFIG["sdk_proxy"]
         proxies = {
             "http": cur_proxyuri,
@@ -47,22 +50,31 @@ class UnicornSdk:
     def auth(cls, access_token):
         UnicornSdk.CONFIG["access_token"] = access_token
 
-    def create_device_session(self, session_id, platform):
+    @classmethod
+    def create_device_session(cls, session_id, platform):
         """
         create new DeviceSession
         :return:
         """
-        pass
+        return DeviceSession(UnicornSdk(), session_id=session_id, platform=platform)
 
     @classmethod
     def config_sdk(cls, access_token=None, debug=None, api_url=None):
         if access_token:
-            UnicornSdk.CONFIG["access_token"] = access_token
+            cls.CONFIG["access_token"] = access_token
         if debug is not None:
-            UnicornSdk.CONFIG["is_debug"] = bool(debug)
+            cls.CONFIG["is_debug"] = bool(debug)
         if api_url:
-            UnicornSdk.CONFIG["api_url"] = api_url
+            cls.CONFIG["api_url"] = api_url
 
     @classmethod
-    def captcha_api(cls) -> CaptchaAPI:
+    def captcha_api(cls) -> "CaptchaAPI":
         return CaptchaAPI(UnicornSdk())
+
+    @classmethod
+    def on_exit(cls):
+        if cls.API_CLIENT:
+            cls.API_CLIENT.close()
+
+
+atexit.register(UnicornSdk.on_exit)

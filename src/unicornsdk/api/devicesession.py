@@ -5,17 +5,20 @@ from unicornsdk.api.tls import TlsAPI
 
 class DeviceSession:
 
-    def __init__(self, sdk):
+    def __init__(self, sdk, session_id=None, platform=PlatForm.WINDOWS):
         self.sdk = sdk
+        self.platform = platform
         self.XSESSIONDATA: str = None
-        self.session_id = None
-
-    def init_session(self, session_id: str, platform: PlatForm, flavors=None, **kwargs):
         self.session_id = session_id
+        self.device_info = None
+
+    def init_session(self, session_id: str = None, platform: PlatForm = None, flavors=None, **kwargs):
+        self.session_id = session_id or self.session_id
+        self.platform = platform or self.platform
         url = self.sdk.api_url + "/api/session/init/"
         params = {
-            "sessionid": session_id,
-            "platform": platform,
+            "sessionid": self.session_id,
+            "platform": self.platform,
             "flavors": flavors,
             **kwargs,
         }
@@ -29,11 +32,22 @@ class DeviceSession:
         if resp.status_code != 200:
             raise Exception(resp.text)
         self.XSESSIONDATA = resp.cookies["XSESSIONDATA"]
+        self.device_info = resp.json()
+        return self.device_info
 
     def get_cookie(self):
         return {
             "XSESSIONDATA": self.XSESSIONDATA
         }
+
+    def load_state(self, bundle):
+        self.XSESSIONDATA = bundle.get("XSESSIONDATA")
+        self.device_info = bundle.get("device_info")
+
+    def save_state(self, bundle):
+        bundle["XSESSIONDATA"] = self.XSESSIONDATA
+        bundle["device_info"] = self.device_info
+
 
     def kasada_api(self):
         return KasadaAPI(self.sdk, self)

@@ -9,7 +9,7 @@ from requests import Session as RequestSession
 from unicornsdk import PlatForm
 from unicornsdk.api.devicesession import DeviceSession
 from unicornsdk.sdk import UnicornSdk
-from unicornsdk.utils import infer_platform, accept_language_to_languages, now_time_ms
+from utils import infer_platform, accept_language_to_languages, now_time_ms
 
 if TYPE_CHECKING:
     from unicornsdk.api.kasada import KasadaAPI
@@ -67,13 +67,12 @@ class Session(RequestSession):
             return
 
         session_id = str(uuid.uuid4())
-        self._device_session = DeviceSession(self.sdk)
-        self._device_session.session_id = session_id
+        ua = headers["user-agent"]
+        platform = infer_platform(ua)
+        self._device_session = DeviceSession(self.sdk, session_id=session_id, platform=platform)
         if not self._need_device_session:
             return
 
-        ua = headers["user-agent"]
-        platform = infer_platform(ua)
         accept_language = headers.get('accept-language')
         languages = accept_language_to_languages(accept_language)
         return self.init_device_session(

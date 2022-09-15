@@ -2,3 +2,4 @@ brotli
 loguru
 python-dateutil
 httpx
+aiohttp
