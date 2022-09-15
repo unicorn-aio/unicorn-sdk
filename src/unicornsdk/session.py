@@ -33,16 +33,14 @@ class Session(RequestSession):
             **kwargs,
         )
 
-    def config_for_kasada(self, intercept_mapping, use_cd=1):
+    def config_for_kasada(self, intercept_mapping, use_cd=1, timezone_info=None):
         self._need_device_session = True
-        solver = KasadaSolver(self, intercept_mapping, use_cd=use_cd)
+        solver = KasadaSolver(self, intercept_mapping, use_cd=use_cd, timezone_info=timezone_info)
         self._interceptors["kasada"] = solver
-
 
     def do_send(self, request, **kwargs):
         r = super().send(request, **kwargs)
         return r
-
 
     def send(self, request, **kwargs):
         headers = request.headers
@@ -124,13 +122,14 @@ class Solver:
 
 class KasadaSolver(Solver):
 
-    def __init__(self, *args, use_cd=1, **kwargs):
+    def __init__(self, *args, use_cd=1, timezone_info=None, **kwargs):
         super(KasadaSolver, self).__init__(*args, **kwargs)
         self.kasada: "KasadaAPI" = None
         self.use_cd = use_cd
         self.st_diff = None
         self.x_kpsdk_ct = None
         self.x_kpsdk_st = None
+        self.timezone_info = timezone_info
 
     def assume_solver(self):
         if not self.kasada:
@@ -152,7 +151,7 @@ class KasadaSolver(Solver):
         referer = resp.request.url
         ips_url = urljoin(referer, ips_url)
         ipsjs = self.req_ipsjs(ips_url, referer, **kwargs)
-        kpparam = self.kasada.kpsdk_parse_ips(ips_url, ipsjs)
+        kpparam = self.kasada.kpsdk_parse_ips(ips_url, ipsjs, timezone_info=self.timezone_info)
 
         tl_url = urljoin(referer, "/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/tl")
         resp = self.req_tl(tl_url, referer, kpparam, **kwargs)

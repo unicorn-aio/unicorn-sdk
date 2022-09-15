@@ -45,13 +45,14 @@ class KasadaAPI:
             logger.error(repr(e))
             raise e
 
-    def kpsdk_parse_ips(self, ips_url, ips_content, *, host=None, site=None, compress_method="GZIP",
+    def kpsdk_parse_ips(self, ips_url, ips_content, *, host=None, site=None, compress_method="GZIP", timezone_info=None,
                         proxy_uri=None, cookie=None, cookiename=None):
         try:
             gzipjps = gzip.compress(ips_content)
             client = self.sdk._get_api_client()
             param = {
                 "ips_url": ips_url,
+                "timezone_info": timezone_info,
                 # "host": host,
                 "proxy_uri": proxy_uri,
                 "compress_method": compress_method,
