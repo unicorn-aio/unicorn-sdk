@@ -3,3 +3,4 @@ loguru
 python-dateutil
 httpx
 aiohttp
+requests

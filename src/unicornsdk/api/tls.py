@@ -112,7 +112,12 @@ class TlsAPI:
     def construct_response(self, resp: httpx.Response, req: httpx.Request = None):
         if resp.status_code >= 400:
             # 没有请求成功
-            errmsg = resp.json()["errmsg"]
+            if "errmsg" in resp.json():
+                errmsg = resp.json()["errmsg"]
+            elif "detail" in resp.json():
+                errmsg = resp.json()["detail"]
+            else:
+                errmsg = resp.text
 
             if "Client.Timeout" in errmsg:
                 raise requests.exceptions.Timeout()

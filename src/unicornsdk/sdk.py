@@ -34,6 +34,8 @@ class UnicornSdk:
         return UnicornSdk.CONFIG["is_debug"]
 
     def _get_authorization(self):
+        if not UnicornSdk.CONFIG.get("access_token"):
+            raise Exception("you need set access_token first! ")
         return {
             "Authorization": "Bearer " + str(UnicornSdk.CONFIG["access_token"])
         }
