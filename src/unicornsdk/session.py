@@ -140,12 +140,12 @@ class KasadaSolver(Solver):
             self.x_kpsdk_ct = resp.headers.get("x-kpsdk-ct")
         return False
 
-    def solve(self, resp, **kwargs):
+    def solve(self, resp, header_order=None, **kwargs):
         self.assume_solver()
 
         # got ips.js url
         ips_url = re.match(r".+src=\"(\S+)\".+", resp.text)[1]
-        referer = resp.request.url
+        referer = str(resp.request.url)
         ips_url = urljoin(referer, ips_url)
         ipsjs = self.req_ipsjs(ips_url, referer, **kwargs)
         kpparam = self.kasada.kpsdk_parse_ips(ips_url, ipsjs, timezone_info=self.timezone_info)
