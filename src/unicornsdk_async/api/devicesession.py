@@ -32,8 +32,8 @@ class DeviceSession(SyncDeviceSession):
             self.device_info = await resp.json()
             return self.device_info
 
-    def kasada_api(self):
-        return KasadaAPI(self.sdk, self)
+    def kasada_api(self, proxy_uri=None):
+        return KasadaAPI(self.sdk, self, proxy_uri=proxy_uri)
 
     def tls_api(self, proxy_uri=None, parrot="Chrome100", ja3=None, http2=True):
         return TlsAPI(self.sdk, self, proxy_uri=proxy_uri, parrot=parrot, ja3=ja3, http2=http2)
