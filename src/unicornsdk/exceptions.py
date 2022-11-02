@@ -1,0 +1,4 @@
+
+
+class TlsRequestError(Exception):
+    pass

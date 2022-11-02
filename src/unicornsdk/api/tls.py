@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from unicornsdk.api.devicesession import DeviceSession
     from unicornsdk.sdk import UnicornSdk
 
+from unicornsdk import exceptions
 
 class TlsAPI:
     CLIENT = httpx.Client()
@@ -19,7 +20,8 @@ class TlsAPI:
             proxy_uri=None,
             parrot=None,
             ja3=None,
-            http2=True
+            http2=True,
+            http2Fp=None,
     ):
         self.device_session = device_session
         self.sdk = sdk
@@ -27,6 +29,7 @@ class TlsAPI:
         self.parrot = parrot
         self.ja3 = ja3
         self.http2 = http2
+        self.http2Fp = http2Fp
         self.forward_url = self.sdk.api_url + "/api/tls/forward/"
 
     def construct_forward_request(
@@ -36,27 +39,37 @@ class TlsAPI:
     ):
         userAgent = request.headers.get("user-agent") or request.headers.get("User-Agent")
 
-        if "Cookie" in request.headers and "Cookie" not in header_order:
+        if "Cookie" in request.headers and "Cookie" not in header_order and "cookie" not in header_order:
             header_order.append("Cookie")
-        elif "cookie" in request.headers and "cookie" not in header_order:
-            header_order.append("cookie")
 
         req = {
             "sessionId": self.device_session.session_id,
             "options": {
                 "url": str(request.url),
                 "method": request.method,
-                "headers": dict(request.headers),
+                # "headers": dict(request.headers),
+                "headers": {},
                 "body": base64.b64encode(request.content).decode(),
                 "headerOrder": header_order,
                 "userAgent": userAgent
             }
         }
+        encoding = request.headers.encoding
+        for i in request.headers.raw:
+            k = i[0].decode(encoding)
+            v = i[1].decode(encoding)
+            req["options"]["headers"][k] = v
+
+        if "host" in request.headers and "host" not in header_order and "Host" not in header_order:
+            header_order.insert(0, "host")
+
         req["options"]["proxy"] = proxy_uri or self.proxy_uri
         req["options"]["ja3"] = self.ja3
         req["options"]["parrot"] = self.parrot
-        req["options"]["timeout"] = timeout
+        req["options"]["timeout"] = timeout[0] if hasattr(timeout, '__iter__') else timeout
         req["options"]["http2"] = self.http2
+        if self.http2Fp:
+            req["options"]["http2Fp"] = self.http2Fp
         return req
 
     def request(self, method, url, *,
@@ -122,7 +135,7 @@ class TlsAPI:
             if "Client.Timeout" in errmsg:
                 raise requests.exceptions.Timeout()
             else:
-                raise Exception(errmsg)
+                raise exceptions.TlsRequestError(f"{resp.status_code}: {errmsg}")
 
         response = resp.json()["Response"]
         body = base64.b64decode(response["Body"])

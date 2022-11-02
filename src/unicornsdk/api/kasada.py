@@ -75,7 +75,8 @@ class KasadaAPI:
                 cookies=self.device_session.get_cookie(),
                 files={"ips_js": gzipjps},
                 verify=False,
-                proxies=self.proxy_uri
+                # proxies=self.proxy_uri
+                proxies=self.sdk._get_proxys_for_sdk()
             )
 
             if resp.status_code == 200:

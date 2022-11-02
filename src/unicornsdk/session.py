@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class Session(RequestSession):
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, session_id=None):
         super(Session, self).__init__()
         self._device_session: DeviceSession = None
         self._need_device_session = False
@@ -25,10 +25,11 @@ class Session(RequestSession):
         self.sdk = UnicornSdk()
         self._interceptors = {}
         self.session = session
+        self._session_id = session_id
 
     def init_device_session(self, session_id=None, platform=PlatForm.WINDOWS, **kwargs):
         self._device_session.init_session(
-            session_id=session_id or str(uuid.uuid4()),
+            session_id=session_id or self._session_id or str(uuid.uuid4()),
             platform=platform,
             **kwargs,
         )
@@ -66,13 +67,13 @@ class Session(RequestSession):
         if self._device_session:
             return
 
-        session_id = str(uuid.uuid4())
+        session_id = self._session_id or str(uuid.uuid4())
         ua = headers["user-agent"]
-        platform = infer_platform(ua)
-        self._device_session = DeviceSession(self.sdk, session_id=session_id, platform=platform)
+        self._device_session = DeviceSession(self.sdk, session_id=session_id)
         if not self._need_device_session:
             return
 
+        platform = infer_platform(ua)
         accept_language = headers.get('accept-language')
         return self.init_device_session(
             session_id=session_id,
@@ -119,13 +120,14 @@ class Solver:
 
 class KasadaSolver(Solver):
 
-    def __init__(self, *args, use_cd=1, timezone_info=None, **kwargs):
+    def __init__(self, *args, use_cd=2, use_dt=True, timezone_info=None, **kwargs):
         super(KasadaSolver, self).__init__(*args, **kwargs)
         self.kasada: "KasadaAPI" = None
         self.use_cd = use_cd
         self.st_diff = None
         self.x_kpsdk_ct = None
         self.x_kpsdk_st = None
+        self.use_dt = use_dt
         self.timezone_info = timezone_info
 
     def assume_solver(self):

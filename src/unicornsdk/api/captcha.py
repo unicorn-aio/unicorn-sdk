@@ -8,11 +8,12 @@ if TYPE_CHECKING:
     from unicornsdk.api.devicesession import DeviceSession
     from unicornsdk.sdk import UnicornSdk
 
+from unicornsdk.api.baseapi import BaseApi
 
-class CaptchaAPI:
+class CaptchaAPI(BaseApi):
 
-    def __init__(self, sdk: "UnicornSdk"):
-        self._sdk = sdk
+    def __init__(self, **kwargs):
+        super(CaptchaAPI, self).__init__(**kwargs)
 
     def image_ocr(self, image:bytes=None, image_path:str=None):
         try:
@@ -23,13 +24,10 @@ class CaptchaAPI:
                 else:
                     raise Exception("no image to solve!")
 
-            client = self._sdk._get_api_client()
-            resp = client.post(
+            resp = self.post(
                 self._sdk.api_url + "/api/captcha/image/",
                 headers=self._sdk._get_authorization(),
                 data=image,
-                verify=False,
-                proxies=self._sdk._get_proxys_for_sdk(),
             )
 
             if resp.status_code == 200:

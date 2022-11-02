@@ -4,6 +4,8 @@ import gzip
 
 from loguru import logger
 
+from unicornsdk.utils import now_time_str
+
 if TYPE_CHECKING:
     from unicornsdk_async.api.devicesession import DeviceSession
     from unicornsdk_async.sdk import UnicornSdkAsync
@@ -77,7 +79,8 @@ class KasadaAPI:
                     cookies=self.device_session.get_cookie(),
                     data={"ips_js": gzipjps},
                     ssl=False,
-                    proxy=self.proxy_uri,
+                    # proxy=self.proxy_uri,
+                    proxy=self.sdk._get_proxys_for_sdk(),
                 )
 
                 if resp.status == 200:

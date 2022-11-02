@@ -4,3 +4,4 @@ python-dateutil
 httpx
 aiohttp
 requests
+tenacity

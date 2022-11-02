@@ -17,23 +17,26 @@ from unicornsdk.api.tls import TlsAPI
 
 class TlsSession(Session):
 
-    def __init__(self):
-        super(TlsSession, self).__init__()
-        self.parrot: str = "Chrome100"
+    def __init__(self, **kwargs):
+        super(TlsSession, self).__init__(**kwargs)
+        self.parrot: str = None
         self.ja3: str = None
         self.http2: bool = True
+        self.http2Fp = None
 
         # self.adapters = OrderedDict()
         self.tls_adapter = None
         self.tls_api:TlsAPI  = None
 
-    def config_tls(self, parrot=None, ja3=None, http2=None):
+    def config_tls(self, parrot=None, ja3=None, http2=None, http2Fp=None):
         if parrot:
             self.parrot = parrot
         if ja3:
             self.ja3 = ja3
         if http2 is not None:
             self.http2 = bool(http2)
+        if http2Fp is not None:
+            self.http2Fp = http2Fp
 
     def request(
             self,
@@ -90,7 +93,7 @@ class TlsSession(Session):
     def do_send(self, request, timeout, header_order, **kwargs):
         if not self.tls_api:
             self.tls_api = self._device_session.tls_api(
-                parrot=self.parrot, ja3=self.ja3, http2=self.http2,
+                parrot=self.parrot, ja3=self.ja3, http2=self.http2, http2Fp=self.http2Fp,
             )
 
         kwargs.setdefault("stream", self.stream)

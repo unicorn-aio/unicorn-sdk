@@ -6,6 +6,8 @@ import httpx
 import requests
 from httpx import Cookies, Response
 
+from unicornsdk import exceptions
+
 if TYPE_CHECKING:
     from unicornsdk.api.devicesession import DeviceSession
     from unicornsdk.sdk import UnicornSdk
@@ -19,7 +21,8 @@ class TlsAPI:
             proxy_uri=None,
             parrot=None,
             ja3=None,
-            http2=True
+            http2=True,
+            http2Fp=None
     ):
         self.device_session = device_session
         self.sdk = sdk
@@ -27,6 +30,7 @@ class TlsAPI:
         self.parrot = parrot
         self.ja3 = ja3
         self.http2 = http2
+        self.http2Fp = http2Fp
         self.forward_url = self.sdk.api_url + "/api/tls/forward/"
 
     def construct_forward_request(
@@ -57,6 +61,8 @@ class TlsAPI:
         req["options"]["parrot"] = self.parrot
         req["options"]["timeout"] = timeout
         req["options"]["http2"] = self.http2
+        if self.http2Fp:
+            req["options"]["http2Fp"] = self.http2Fp
         return req
 
     def request(self, method, url, *,
@@ -117,7 +123,7 @@ class TlsAPI:
             if "Client.Timeout" in errmsg:
                 raise requests.exceptions.Timeout()
             else:
-                raise Exception(errmsg)
+                raise exceptions.TlsRequestError(errmsg)
 
         response = resp.json()["Response"]
         body = base64.b64decode(response["Body"])

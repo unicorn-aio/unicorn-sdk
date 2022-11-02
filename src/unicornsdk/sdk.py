@@ -8,10 +8,12 @@ from unicornsdk.api.devicesession import DeviceSession
 class UnicornSdk:
     CONFIG = {
         "access_token": None,
-        "sdk_proxy": "http://127.0.0.1:8888",
+        "sdk_proxy": None,
         "api_url": "https://us.unicorn-bot.com",
         "is_debug": False,
+        "timeout": 30,
     }
+
     API_CLIENT = requests.Session()
 
     def __init__(self):
@@ -28,6 +30,10 @@ class UnicornSdk:
     @property
     def api_url(self):
         return UnicornSdk.CONFIG["api_url"]
+
+    @property
+    def timeout(self):
+        return UnicornSdk.CONFIG.get("timeout", 60)
 
     @property
     def is_debug(self):
@@ -71,7 +77,7 @@ class UnicornSdk:
 
     @classmethod
     def captcha_api(cls) -> "CaptchaAPI":
-        return CaptchaAPI(UnicornSdk())
+        return CaptchaAPI(sdk=UnicornSdk())
 
     @classmethod
     def on_exit(cls):
