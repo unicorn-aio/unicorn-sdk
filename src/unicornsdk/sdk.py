@@ -1,6 +1,7 @@
 import atexit
 
 import requests
+from urllib import parse
 
 from unicornsdk.api.captcha import CaptchaAPI
 from unicornsdk.api.devicesession import DeviceSession
@@ -12,6 +13,7 @@ class UnicornSdk:
         "api_url": "https://us.unicorn-bot.com",
         "is_debug": False,
         "timeout": 30,
+        "tls_forward_url": None
     }
 
     API_CLIENT = requests.Session()
@@ -34,6 +36,10 @@ class UnicornSdk:
     @property
     def timeout(self):
         return UnicornSdk.CONFIG.get("timeout", 60)
+
+    @property
+    def tls_forward_url(self):
+        return UnicornSdk.CONFIG.get("tls_forward_url") or parse.urljoin(self.api_url, "/api/tls/forward/")
 
     @property
     def is_debug(self):
@@ -67,13 +73,15 @@ class UnicornSdk:
         return DeviceSession(UnicornSdk(), session_id=session_id, platform=platform)
 
     @classmethod
-    def config_sdk(cls, access_token=None, debug=None, api_url=None):
+    def config_sdk(cls, access_token=None, debug=None, api_url=None, tls_forward_url=None):
         if access_token:
             cls.CONFIG["access_token"] = access_token
         if debug is not None:
             cls.CONFIG["is_debug"] = bool(debug)
         if api_url:
             cls.CONFIG["api_url"] = api_url
+        if tls_forward_url:
+            cls.CONFIG["tls_forward_url"] = tls_forward_url
 
     @classmethod
     def captcha_api(cls) -> "CaptchaAPI":

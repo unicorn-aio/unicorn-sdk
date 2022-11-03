@@ -30,7 +30,6 @@ class TlsAPI:
         self.ja3 = ja3
         self.http2 = http2
         self.http2Fp = http2Fp
-        self.forward_url = self.sdk.api_url + "/api/tls/forward/"
 
     def construct_forward_request(
             self, request: httpx.Request,
@@ -99,7 +98,7 @@ class TlsAPI:
     def real_do_forward_request(self, request, data, timeout):
         client = self.sdk._get_api_client()
         ret = client.post(
-            self.forward_url,
+            self.sdk.tls_forward_url,
             headers=self.sdk._get_authorization(),
             data=data,
             timeout=timeout,
