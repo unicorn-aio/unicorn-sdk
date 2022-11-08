@@ -22,7 +22,8 @@ class TlsAPI:
             parrot=None,
             ja3=None,
             http2=True,
-            http2Fp=None
+            http2Fp=None,
+            DisableCompression = True,
     ):
         self.device_session = device_session
         self.sdk = sdk
@@ -31,6 +32,7 @@ class TlsAPI:
         self.ja3 = ja3
         self.http2 = http2
         self.http2Fp = http2Fp
+        self.DisableCompression = DisableCompression
 
     def construct_forward_request(
             self, request: httpx.Request,
@@ -60,6 +62,7 @@ class TlsAPI:
         req["options"]["parrot"] = self.parrot
         req["options"]["timeout"] = timeout
         req["options"]["http2"] = self.http2
+        req["options"]["DisableCompression"] = self.DisableCompression
         if self.http2Fp:
             req["options"]["http2Fp"] = self.http2Fp
         return req
