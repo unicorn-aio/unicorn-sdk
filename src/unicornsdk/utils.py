@@ -30,6 +30,8 @@ def infer_platform(userAgent):
         # platform_type = PlatFormType.MOBILE
     elif userAgent.find("Mac OS X") != -1:
         platform = "OSX"
+    else:
+        platform = "WINDOWS"
     return platform
 
 

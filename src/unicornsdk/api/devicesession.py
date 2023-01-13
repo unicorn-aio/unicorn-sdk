@@ -1,6 +1,7 @@
 from unicornsdk import PlatForm
 from unicornsdk.api.kasada import KasadaAPI
 from unicornsdk.api.tls import TlsAPI
+from unicornsdk.api.datadome import DataDomeAPI
 
 
 class DeviceSession:
@@ -35,10 +36,16 @@ class DeviceSession:
         self.device_info = resp.json()
         return self.device_info
 
+    def is_inited(self):
+        return bool(self.XSESSIONDATA)
+
     def get_cookie(self):
-        return {
-            "XSESSIONDATA": self.XSESSIONDATA
-        }
+        if self.XSESSIONDATA:
+            return {
+                "XSESSIONDATA": self.XSESSIONDATA
+            }
+        else:
+            return None
 
     def load_state(self, bundle):
         self.XSESSIONDATA = bundle.get("XSESSIONDATA")
@@ -54,3 +61,6 @@ class DeviceSession:
 
     def tls_api(self, proxy_uri=None, parrot=None, ja3=None, http2=True, http2Fp=None):
         return TlsAPI(self.sdk, self, proxy_uri=proxy_uri, parrot=parrot, ja3=ja3, http2=http2, http2Fp=http2Fp)
+
+    def datadome_api(self):
+        return DataDomeAPI(self.sdk, self)

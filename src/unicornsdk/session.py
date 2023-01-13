@@ -19,23 +19,23 @@ class Session(RequestSession):
 
     def __init__(self, session=None, session_id=None):
         super(Session, self).__init__()
-        self._device_session: DeviceSession = None
-        self._need_device_session = False
+        self.need_device_session = False
         self._intercept_mapping = {}
         self.sdk = UnicornSdk()
+        self.device_session = DeviceSession(self.sdk, session_id=session_id)
         self._interceptors = {}
         self.session = session
         self._session_id = session_id
 
     def init_device_session(self, session_id=None, platform=PlatForm.WINDOWS, **kwargs):
-        self._device_session.init_session(
+        self.device_session.init_session(
             session_id=session_id or self._session_id or str(uuid.uuid4()),
             platform=platform,
             **kwargs,
         )
 
     def config_for_kasada(self, intercept_mapping, use_cd=1, timezone_info=None):
-        self._need_device_session = True
+        self.need_device_session = True
         solver = KasadaSolver(self, intercept_mapping, use_cd=use_cd, timezone_info=timezone_info)
         self._interceptors["kasada"] = solver
 
@@ -63,18 +63,19 @@ class Session(RequestSession):
         for inter_type, solver in self._interceptors.items():
             solver.on_post(resp, **kwargs)
 
-    def infer_device_from_header(self, headers):
-        if self._device_session:
+    def infer_device_from_header(self, headers=None):
+        if self.device_session.is_inited():
             return
 
+        if not headers:
+            headers = self.headers
         session_id = self._session_id or str(uuid.uuid4())
-        ua = headers["user-agent"]
-        self._device_session = DeviceSession(self.sdk, session_id=session_id)
-        if not self._need_device_session:
+        ua = headers.get("user-agent") or headers.get("User-Agent")
+        if not self.need_device_session:
             return
 
         platform = infer_platform(ua)
-        accept_language = headers.get('accept-language')
+        accept_language = headers.get('accept-language') or headers.get('Accept-Language')
         return self.init_device_session(
             session_id=session_id,
             platform=platform,
@@ -132,7 +133,7 @@ class KasadaSolver(Solver):
 
     def assume_solver(self):
         if not self.kasada:
-            self.kasada = self.session._device_session.kasada_api()
+            self.kasada = self.session.device_session.kasada_api()
 
     def need_solve(self, resp, **kwargs):
         if resp.status_code == 429 and resp.text.find("ips.js") != -1:

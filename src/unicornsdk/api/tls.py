@@ -1,10 +1,14 @@
 import base64
+import copy
+import email.utils
 from typing import TYPE_CHECKING, List
 import json as _json
 
 import httpx
 import requests
+from dateutil import parser
 from httpx import Cookies, Response
+from http.cookiejar import Cookie
 
 if TYPE_CHECKING:
     from unicornsdk.api.devicesession import DeviceSession
@@ -135,7 +139,7 @@ class TlsAPI:
                 errmsg = resp.text
 
             if "Client.Timeout" in errmsg:
-                raise requests.exceptions.Timeout()
+                raise exceptions.TimeOutError()
             else:
                 raise exceptions.TlsRequestError(f"{resp.status_code}: {errmsg}")
 
@@ -149,10 +153,46 @@ class TlsAPI:
             else:
                 headers.append((k, v))
 
+        req.url = response["URL"]
         fake_resp = httpx.Response(
             status_code=response["Status"],
             headers=headers,
             content=body,
             request=req,
         )
-        return fake_resp
+        cookies = []
+        # add extra cookie when redirect
+        for i in response["Cookies"]:
+            cookie = self.server_cookie_to_python_cookie(i)
+            cookies.append(cookie)
+        return fake_resp, cookies
+
+    def server_cookie_to_python_cookie(self, sc):
+        name = sc["name"]
+        value = sc["value"]
+        if sc["rawExpires"]:
+            # expires = parser.isoparse(sc['rawExpires']).timestamp()
+            expires = email.utils.parsedate_to_datetime(sc['rawExpires']).timestamp()
+        else:
+            expires = None
+        result = {
+            "version": 0,
+            "name": name,
+            "value": value,
+            "port": None,
+            "domain": sc["domain"],
+            "path": sc["path"],
+            "secure": sc["secure"],
+            "expires": expires,
+            "discard": True,
+            "comment": None,
+            "comment_url": None,
+            "rest": {"HttpOnly": sc['httpOnly']},
+            "rfc2109": False,
+        }
+        result["port_specified"] = bool(result["port"])
+        result["domain_specified"] = bool(result["domain"])
+        result["domain_initial_dot"] = result["domain"].startswith(".")
+        result["path_specified"] = bool(result["path"])
+        cookie = Cookie(**result)
+        return cookie

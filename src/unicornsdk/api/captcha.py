@@ -26,7 +26,6 @@ class CaptchaAPI(BaseApi):
 
             resp = self.post(
                 self._sdk.api_url + "/api/captcha/image/",
-                headers=self._sdk._get_authorization(),
                 data=image,
             )
 

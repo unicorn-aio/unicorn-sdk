@@ -16,6 +16,7 @@ dependencies = [
   "httpx",
   "aiohttp",
   "tenacity",
+  "bs4",
 ]
 
 

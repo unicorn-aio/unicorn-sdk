@@ -92,7 +92,7 @@ class TlsSession(Session):
 
     def do_send(self, request, timeout, header_order, **kwargs):
         if not self.tls_api:
-            self.tls_api = self._device_session.tls_api(
+            self.tls_api = self.device_session.tls_api(
                 parrot=self.parrot, ja3=self.ja3, http2=self.http2, http2Fp=self.http2Fp,
             )
 
@@ -118,9 +118,12 @@ class TlsSession(Session):
         else:
             proxy_uri = proxies.get("http")
 
-        resp = self.tls_api.request_with_req(request, timeout=timeout, proxy_uri=proxy_uri, header_order=header_order)
+        # add extra cookie when redirect
+        resp, cookies = self.tls_api.request_with_req(request, timeout=timeout, proxy_uri=proxy_uri, header_order=header_order)
         # only handle cookies, not handle redirect
         self.extract_cookies_to_jar(request, resp)
+        for i in cookies:
+            self.cookies.set_cookie(i)
         return resp
 
     def extract_cookies_to_jar(self, req, resp):
